@@ -12,7 +12,13 @@
       "ios": {
         "simulator": false
       },
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "API_BASE_URL": "https://5ewyeqait6.execute-api.ap-south-1.amazonaws.com/v1",
+        "COGNITO_USER_POOL_ID": "ap-south-1_9P8L9xXqX",
+        "COGNITO_CLIENT_ID": "2riom9a4cqr6throgtjjhvd94k",
+        "AWS_REGION": "ap-south-1"
+      }
     },
     "production": {
       "autoIncrement": true,

@@ -1,4 +1,4 @@
-import { Audio, type AVPlaybackStatus } from "expo-av";
+import { createAudioPlayer, type AudioPlayer, type AudioStatus } from "expo-audio";
 import { create } from "zustand";
 import { api } from "../api/endpoints";
 import type { Song } from "../api/types";
@@ -11,7 +11,7 @@ interface PlayerState {
   isBuffering: boolean;
   positionMillis: number;
   durationMillis: number;
-  sound: Audio.Sound | null;
+  player: AudioPlayer | null;
 
   playTrack: (track: Song, queue?: Song[]) => Promise<void>;
   togglePlayPause: () => Promise<void>;
@@ -20,28 +20,22 @@ interface PlayerState {
   playPrevious: () => Promise<void>;
 }
 
-async function unloadCurrentSound(sound: Audio.Sound | null) {
-  if (!sound) return;
+function removeCurrentPlayer(player: AudioPlayer | null) {
+  if (!player) return;
   try {
-    await sound.unloadAsync();
+    player.remove();
   } catch {
-    // Already unloaded — ignore.
+    // Already removed — ignore.
   }
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => {
-  function onStatusUpdate(status: AVPlaybackStatus) {
-    if (!status.isLoaded) {
-      if (status.error) {
-        set({ isBuffering: false });
-      }
-      return;
-    }
+  function onStatusUpdate(status: AudioStatus) {
     set({
-      isPlaying: status.isPlaying,
+      isPlaying: status.playing,
       isBuffering: status.isBuffering,
-      positionMillis: status.positionMillis,
-      durationMillis: status.durationMillis ?? get().durationMillis,
+      positionMillis: status.currentTime * 1000,
+      durationMillis: status.duration > 0 ? status.duration * 1000 : get().durationMillis,
     });
     if (status.didJustFinish) {
       void get().playNext();
@@ -56,7 +50,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     isBuffering: false,
     positionMillis: 0,
     durationMillis: 0,
-    sound: null,
+    player: null,
 
     playTrack: async (track, queue) => {
       const existingQueue = get().queue;
@@ -66,7 +60,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       // Fire-and-forget play tracking — never blocks playback.
       api.playSong(track.id).catch(() => {});
 
-      await unloadCurrentSound(get().sound);
+      removeCurrentPlayer(get().player);
 
       set({
         currentTrack: track,
@@ -76,35 +70,33 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
         isBuffering: true,
         positionMillis: 0,
         durationMillis: track.durationSeconds * 1000,
-        sound: null,
+        player: null,
       });
 
       try {
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: track.audioUrl },
-          { shouldPlay: true, progressUpdateIntervalMillis: 500 },
-          onStatusUpdate
-        );
-        set({ sound });
+        const player = createAudioPlayer({ uri: track.audioUrl }, { updateInterval: 500 });
+        player.addListener("playbackStatusUpdate", onStatusUpdate);
+        player.play();
+        set({ player });
       } catch {
         set({ isBuffering: false, isPlaying: false });
       }
     },
 
     togglePlayPause: async () => {
-      const { sound, isPlaying } = get();
-      if (!sound) return;
+      const { player, isPlaying } = get();
+      if (!player) return;
       if (isPlaying) {
-        await sound.pauseAsync();
+        player.pause();
       } else {
-        await sound.playAsync();
+        player.play();
       }
     },
 
     seekTo: async (millis) => {
-      const { sound } = get();
-      if (!sound) return;
-      await sound.setPositionAsync(millis);
+      const { player } = get();
+      if (!player) return;
+      await player.seekTo(millis / 1000);
     },
 
     playNext: async () => {

@@ -36,6 +36,7 @@ const config: ExpoConfig = {
         backgroundColor: "#0A1628",
       },
     ],
+    "expo-audio",
   ],
   extra: {
     apiBaseUrl: process.env.API_BASE_URL ?? "https://api.irhythm.example.com/v1",
