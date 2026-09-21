@@ -42,6 +42,9 @@ const config: ExpoConfig = {
     cognitoUserPoolId: process.env.COGNITO_USER_POOL_ID ?? "ap-south-1_PLACEHOLDER",
     cognitoClientId: process.env.COGNITO_CLIENT_ID ?? "placeholder-cognito-client-id",
     awsRegion: process.env.AWS_REGION ?? "ap-south-1",
+    eas: {
+      projectId: "e5d8e15e-de58-4f23-bd46-4cb37b181124",
+    },
   },
 };
 
