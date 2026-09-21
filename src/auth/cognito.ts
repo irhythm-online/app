@@ -4,9 +4,9 @@ import {
   CognitoUser,
   CognitoUserAttribute,
   CognitoUserPool,
-  type ISignUpResult,
 } from "amazon-cognito-identity-js";
 import Constants from "expo-constants";
+import { randomUUID } from "expo-crypto";
 
 const extra = (Constants.expoConfig?.extra ?? {}) as {
   cognitoUserPoolId?: string;
@@ -24,11 +24,11 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
-function getCognitoUser(email: string): CognitoUser {
-  return new CognitoUser({ Username: email, Pool: userPool });
+function getCognitoUser(username: string): CognitoUser {
+  return new CognitoUser({ Username: username, Pool: userPool });
 }
 
-/** SRP sign-in against the Cognito User Pool. */
+/** SRP sign-in against the Cognito User Pool. The pool aliases `email`, so email works as the Username here. */
 export function signIn(email: string, password: string): Promise<AuthTokens> {
   return new Promise((resolve, reject) => {
     const authDetails = new AuthenticationDetails({ Username: email, Password: password });
@@ -46,34 +46,40 @@ export function signIn(email: string, password: string): Promise<AuthTokens> {
   });
 }
 
-/** Self-signup with email + password + display name (stored as the `name` attribute). */
-export function signUp(email: string, password: string, displayName: string): Promise<ISignUpResult> {
+/**
+ * Self-signup with email + password + display name (stored as the `name` attribute).
+ * The pool has `email` configured as an alias, not as `UsernameAttributes`, so Cognito
+ * rejects an email-shaped Username at signup time. We generate a random Username and
+ * keep `email` as an attribute — sign-in still works via email since aliases resolve there.
+ */
+export function signUp(email: string, password: string, displayName: string): Promise<{ username: string }> {
   return new Promise((resolve, reject) => {
+    const username = randomUUID();
     const attributes = [
       new CognitoUserAttribute({ Name: "email", Value: email }),
       new CognitoUserAttribute({ Name: "name", Value: displayName }),
     ];
-    userPool.signUp(email, password, attributes, [], (err, result) => {
+    userPool.signUp(username, password, attributes, [], (err, result) => {
       if (err || !result) reject(err ?? new Error("Sign up failed"));
-      else resolve(result);
+      else resolve({ username });
     });
   });
 }
 
-/** Confirms a just-created account with the verification code emailed by Cognito. */
-export function confirmSignUp(email: string, code: string): Promise<void> {
+/** Confirms a just-created account with the verification code emailed by Cognito. Takes the generated Username, not the email. */
+export function confirmSignUp(username: string, code: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    getCognitoUser(email).confirmRegistration(code, true, (err) => {
+    getCognitoUser(username).confirmRegistration(code, true, (err) => {
       if (err) reject(err);
       else resolve();
     });
   });
 }
 
-/** Requests a new verification code (in case the first one expired / was lost). */
-export function resendConfirmationCode(email: string): Promise<void> {
+/** Requests a new verification code (in case the first one expired / was lost). Takes the generated Username, not the email. */
+export function resendConfirmationCode(username: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    getCognitoUser(email).resendConfirmationCode((err) => {
+    getCognitoUser(username).resendConfirmationCode((err) => {
       if (err) reject(err);
       else resolve();
     });

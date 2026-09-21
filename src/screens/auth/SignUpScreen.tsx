@@ -32,8 +32,8 @@ export function SignUpScreen({ navigation }: Props) {
     }
     setLoading(true);
     try {
-      await signUp(trimmedEmail, password, displayName.trim());
-      navigation.navigate("ConfirmEmail", { email: trimmedEmail });
+      const { username } = await signUp(trimmedEmail, password, displayName.trim());
+      navigation.navigate("ConfirmEmail", { email: trimmedEmail, username });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create your account.");
     } finally {

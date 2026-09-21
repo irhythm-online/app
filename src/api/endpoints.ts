@@ -21,23 +21,24 @@ export const api = {
     return apiClient.get<PaginatedResponse<Song>>(`/songs${qs ? `?${qs}` : ""}`);
   },
   getSong: (id: string) => apiClient.get<Song>(`/songs/${id}`),
-  searchSongs: (q: string) => apiClient.get<Song[]>(`/songs/search?q=${encodeURIComponent(q)}`),
+  searchSongs: (q: string) =>
+    apiClient.get<PaginatedResponse<Song>>(`/songs/search?q=${encodeURIComponent(q)}`).then((r) => r.items),
 
-  getAlbums: () => apiClient.get<Album[]>("/albums"),
+  getAlbums: () => apiClient.get<PaginatedResponse<Album>>("/albums").then((r) => r.items),
   getAlbum: (id: string) => apiClient.get<AlbumDetail>(`/albums/${id}`),
 
-  getArtists: () => apiClient.get<Artist[]>("/artists"),
+  getArtists: () => apiClient.get<PaginatedResponse<Artist>>("/artists").then((r) => r.items),
   getArtist: (id: string) => apiClient.get<ArtistDetail>(`/artists/${id}`),
 
   playSong: (id: string) => apiClient.post<void>(`/songs/${id}/play`, {}),
 
   // Me
-  getRecentlyPlayed: () => apiClient.get<Song[]>("/me/recently-played"),
-  getLikedSongs: () => apiClient.get<Song[]>("/me/liked-songs"),
+  getRecentlyPlayed: () => apiClient.get<PaginatedResponse<Song>>("/me/recently-played").then((r) => r.items),
+  getLikedSongs: () => apiClient.get<PaginatedResponse<Song>>("/me/liked-songs").then((r) => r.items),
   likeSong: (songId: string) => apiClient.put<void>(`/me/liked-songs/${songId}`),
   unlikeSong: (songId: string) => apiClient.delete<void>(`/me/liked-songs/${songId}`),
 
-  getPlaylists: () => apiClient.get<Playlist[]>("/me/playlists"),
+  getPlaylists: () => apiClient.get<PaginatedResponse<Playlist>>("/me/playlists").then((r) => r.items),
   createPlaylist: (input: CreatePlaylistInput) => apiClient.post<Playlist>("/me/playlists", input),
   getPlaylist: (id: string) => apiClient.get<PlaylistDetail>(`/playlists/${id}`),
   updatePlaylist: (id: string, input: Partial<CreatePlaylistInput>) =>

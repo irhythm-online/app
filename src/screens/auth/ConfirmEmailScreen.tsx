@@ -13,7 +13,7 @@ import { typography } from "../../theme/typography";
 type Props = NativeStackScreenProps<AuthStackParamList, "ConfirmEmail">;
 
 export function ConfirmEmailScreen({ route, navigation }: Props) {
-  const { email } = route.params;
+  const { email, username } = route.params;
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -29,7 +29,7 @@ export function ConfirmEmailScreen({ route, navigation }: Props) {
     }
     setLoading(true);
     try {
-      await confirmSignUp(email, code.trim());
+      await confirmSignUp(username, code.trim());
       navigation.reset({ index: 0, routes: [{ name: "Login" }] });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not verify that code.");
@@ -43,7 +43,7 @@ export function ConfirmEmailScreen({ route, navigation }: Props) {
     setNotice(null);
     setResending(true);
     try {
-      await resendConfirmationCode(email);
+      await resendConfirmationCode(username);
       setNotice("We sent a new code to your email.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not resend the code.");
