@@ -2,7 +2,7 @@ import "react-native-get-random-values";
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, useFonts as useInterFonts } from "@expo-google-fonts/inter";
 import { Poppins_600SemiBold, Poppins_700Bold, useFonts as usePoppinsFonts } from "@expo-google-fonts/poppins";
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
-import { Audio } from "expo-av";
+import { setAudioModeAsync } from "expo-audio";
 import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -40,10 +40,10 @@ export default function App() {
   }, [hydrate]);
 
   useEffect(() => {
-    Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: true,
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      interruptionMode: "duckOthers",
     }).catch(() => {});
   }, []);
 
